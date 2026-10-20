@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Learn & Help – CryptoView</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside id="nav" class="side">
+        <a class="logo" href="index.html">Crypto<span>View</span></a
+        ><a href="index.html"><i>▦</i>Dashboard</a><a href="markets.html"><i>◔</i>Markets</a
+        ><a href="converter.html"><i>⇄</i>Converter</a><a href="watchlist.html"><i>☆</i>Watchlist</a
+        ><a href="wallet.html"><i>▣</i>Wallet</a
+        ><a href="learn.html" class="on"><i>?</i>Learn &amp; Help</a>
+        <div class="sp"></div>
+        <small>Education only. Not financial advice. The wallet uses virtual money.</small>
+      </aside>
+      <div id="scrim" class="scrim"></div>
+      <div class="content">
+        <header class="topbar">
+          <button id="menu-btn" class="pill menu" aria-label="Menu" aria-expanded="false">
+            ☰
+          </button>
+          <form id="top-form" class="tsearch" role="search">
+            <input
+              id="tq"
+              type="search"
+              placeholder="Search a coin, e.g. Bitcoin"
+              aria-label="Search coins"
+            />
+          </form>
+          <button id="cur-btn" class="pill" title="Switch currency">USD</button
+          ><button id="theme-btn" class="pill" title="Switch theme">◐</button>
+        </header>
+        <p id="notice" class="notice" hidden role="status"></p>
+        <main>
+          <h1>Learn &amp; Help</h1>
+          <section class="card">
+            <h2>Glossary</h2>
+            <input id="gq" type="search" placeholder="Search a term" aria-label="Search glossary" />
+            <dl id="gl"></dl>
+          </section>
+          <section class="card">
+            <h2>FAQ</h2>
+            <details>
+              <summary>Is CryptoView giving financial advice?</summary>
+              <p>
+                No. It is an educational tool. Prices are for information only and the practice
+                wallet uses virtual money.
+              </p>
+            </details>
+            <details>
+              <summary>Where does the price data come from?</summary>
+              <p>
+                Coinpaprika provides market data, Binance provides chart candles, and the
+                fawazahmed0 exchange-api provides currency exchange rates. None of them need an API
+                key.
+              </p>
+            </details>
+            <details>
+              <summary>Why do prices sometimes say outdated?</summary>
+              <p>
+                If a data source is slow or offline, CryptoView shows the last saved data with a
+                notice until it can refresh.
+              </p>
+            </details>
+            <details>
+              <summary>Is my watchlist or wallet saved online?</summary>
+              <p>
+                No. Everything is saved in your own browser with localStorage, so clearing your
+                browser data removes it.
+              </p>
+            </details>
+          </section>
+          <section class="card">
+            <h2>Send feedback</h2>
+            <form id="ff" class="stack" novalidate>
+              <label>Name<input id="fn" /></label>
+              <p class="dn small" id="e1"></p>
+              <label>Email<input id="fe" type="email" /></label>
+              <p class="dn small" id="e2"></p>
+              <label>Message<textarea id="fm" rows="4"></textarea></label>
+              <p class="dn small" id="e3"></p>
+              <button>Send</button>
+              <p class="up" id="fok"></p>
+            </form>
+          </section>
+        </main>
+        <footer>
+          <p>
+            CryptoView is for education only. Data: Coinpaprika, Binance, fawazahmed0 exchange-api.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script>
+      const G = [
+        [
+          "Blockchain",
+          "A shared record of transactions kept by many computers, grouped into linked blocks.",
+        ],
+        ["Bitcoin", "The first and largest cryptocurrency, created in 2009."],
+        ["Altcoin", "Any cryptocurrency other than Bitcoin."],
+        ["Market cap", "A coin’s price multiplied by the number of coins in circulation."],
+        ["Wallet", "An app or device that stores the keys needed to use your crypto."],
+        ["Volatility", "How quickly and widely a price moves up and down."],
+        ["Stablecoin", "A coin designed to hold a steady value, often tied to the US dollar."],
+        ["Exchange", "A platform where people buy, sell, and trade crypto."],
+        ["Private key", "A secret code that proves you own your crypto. Never share it."],
+        ["HODL", "Slang for holding a coin long term instead of selling."],
+      ];
+      const gd = () => {
+        const t = $("#gq").value.toLowerCase();
+        $("#gl").innerHTML =
+          G.filter((g) => (g[0] + g[1]).toLowerCase().includes(t))
+            .map((g) => `<dt>${esc(g[0])}</dt><dd>${esc(g[1])}</dd>`)
+            .join("") || "<dd>No terms found.</dd>";
+      };
+      $("#gq").oninput = gd;
+      gd();
+      $("#ff").onsubmit = (e) => {
+        e.preventDefault();
+        const n = $("#fn").value.trim(),
+          m = $("#fe").value.trim(),
+          g = $("#fm").value.trim();
+        const s = (id, t) => {
+          $("#" + id).textContent = t;
+          return !t;
+        };
+        const a = s("e1", n ? "" : "Please enter your name."),
+          b = s("e2", /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m) ? "" : "Please enter a valid email."),
+          c = s("e3", g.length >= 10 ? "" : "Message must be at least 10 characters.");
+        $("#fok").textContent = a && b && c ? "Thank you! Your feedback was received." : "";
+        if (a && b && c) $("#ff").reset();
+      };
+    </script>
+  </body>
+</html>

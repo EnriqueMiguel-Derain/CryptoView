@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Converter – CryptoView</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside id="nav" class="side">
+        <a class="logo" href="index.html">Crypto<span>View</span></a
+        ><a href="index.html"><i>▦</i>Dashboard</a><a href="markets.html"><i>◔</i>Markets</a
+        ><a href="converter.html" class="on"><i>⇄</i>Converter</a
+        ><a href="watchlist.html"><i>☆</i>Watchlist</a><a href="wallet.html"><i>▣</i>Wallet</a
+        ><a href="learn.html"><i>?</i>Learn &amp; Help</a>
+        <div class="sp"></div>
+        <small>Education only. Not financial advice. The wallet uses virtual money.</small>
+      </aside>
+      <div id="scrim" class="scrim"></div>
+      <div class="content">
+        <header class="topbar">
+          <button id="menu-btn" class="pill menu" aria-label="Menu" aria-expanded="false">
+            ☰
+          </button>
+          <form id="top-form" class="tsearch" role="search">
+            <input
+              id="tq"
+              type="search"
+              placeholder="Search a coin, e.g. Bitcoin"
+              aria-label="Search coins"
+            />
+          </form>
+          <button id="cur-btn" class="pill" title="Switch currency">USD</button
+          ><button id="theme-btn" class="pill" title="Switch theme">◐</button>
+        </header>
+        <p id="notice" class="notice" hidden role="status"></p>
+        <main>
+          <h1>Currency converter</h1>
+          <div class="card">
+            <div class="row">
+              <input
+                id="amt"
+                type="number"
+                min="0"
+                step="any"
+                value="1"
+                aria-label="Amount"
+              /><select id="from" aria-label="From"></select
+              ><button id="swap" class="alt" aria-label="Swap">⇄</button
+              ><select id="to" aria-label="To"></select>
+            </div>
+            <p id="err" class="dn small"></p>
+            <p id="res" class="big">…</p>
+            <p id="rate" class="small"></p>
+            <p class="small">Fiat rates: fawazahmed0 exchange-api. Crypto prices: Coinpaprika.</p>
+          </div>
+        </main>
+        <footer>
+          <p>
+            CryptoView is for education only. Data: Coinpaprika, Binance, fawazahmed0 exchange-api.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script>
+      let coins = [],
+        rates = null;
+      const P = new URLSearchParams(location.search);
+      const FIAT = [
+        ["USD", "US Dollar"],
+        ["PHP", "Philippine Peso"],
+        ["EUR", "Euro"],
+        ["GBP", "British Pound"],
+        ["JPY", "Japanese Yen"],
+        ["KRW", "South Korean Won"],
+        ["AUD", "Australian Dollar"],
+        ["CAD", "Canadian Dollar"],
+        ["SGD", "Singapore Dollar"],
+        ["CNY", "Chinese Yuan"],
+        ["INR", "Indian Rupee"],
+      ];
+      const isFiat = (id) => FIAT.some((f) => f[0] === id);
+      const unit = (id) =>
+        isFiat(id)
+          ? id === "USD"
+            ? 1
+            : 1 / rates[id.toLowerCase()]
+          : coins.find((c) => c.id === id).price;
+      const label = (id) => (isFiat(id) ? id : coins.find((c) => c.id === id).symbol);
+      function fill() {
+        const o = FIAT.filter((f) => f[0] === "USD" || (rates && rates[f[0].toLowerCase()])).map(
+          (f) => [f[0], f[1] + " (" + f[0] + ")"],
+        );
+        coins.forEach((c) => o.push([c.id, c.name + " (" + c.symbol + ")"]));
+        const h = o.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("");
+        const f = $("#from").value,
+          t = $("#to").value;
+        $("#from").innerHTML = h;
+        $("#to").innerHTML = h;
+        $("#from").value = f || P.get("from") || "btc-bitcoin";
+        $("#to").value = t || (rates && rates.php ? "PHP" : "USD");
+      }
+      function calc() {
+        const a = parseFloat($("#amt").value);
+        if (isNaN(a) || a < 0) {
+          $("#err").textContent = "Enter a valid amount of 0 or more.";
+          $("#res").textContent = "…";
+          return;
+        }
+        $("#err").textContent = "";
+        const f = $("#from").value,
+          t = $("#to").value,
+          k = unit(f) / unit(t),
+          r = a * k;
+        $("#res").textContent =
+          `${a.toLocaleString()} ${label(f)} = ${r.toLocaleString(undefined, { maximumFractionDigits: r < 1 ? 8 : 4 })} ${label(t)}`;
+        $("#rate").textContent =
+          `Rate used: 1 ${label(f)} = ${k.toLocaleString(undefined, { maximumFractionDigits: k < 1 ? 8 : 4 })} ${label(t)}`;
+      }
+      ["amt", "from", "to"].forEach((i) => ($("#" + i).oninput = calc));
+      $("#swap").onclick = () => {
+        const f = $("#from").value;
+        $("#from").value = $("#to").value;
+        $("#to").value = f;
+        calc();
+      };
+      window.cvRender = () => {};
+      (async () => {
+        rates = await getFx();
+        try {
+          const r = await getMarket();
+          coins = r.coins;
+          stale(r.stale);
+          fill();
+          calc();
+        } catch (e) {
+          fail(e);
+        }
+      })();
+    </script>
+  </body>
+</html>
