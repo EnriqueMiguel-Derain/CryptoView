@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Markets – CryptoView</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside id="nav" class="side">
+        <a class="logo" href="index.html">Crypto<span>View</span></a
+        ><a href="index.html"><i>▦</i>Dashboard</a
+        ><a href="markets.html" class="on"><i>◔</i>Markets</a
+        ><a href="converter.html"><i>⇄</i>Converter</a><a href="watchlist.html"><i>☆</i>Watchlist</a
+        ><a href="wallet.html"><i>▣</i>Wallet</a><a href="learn.html"><i>?</i>Learn &amp; Help</a>
+        <div class="sp"></div>
+        <small>Education only. Not financial advice. The wallet uses virtual money.</small>
+      </aside>
+      <div id="scrim" class="scrim"></div>
+      <div class="content">
+        <header class="topbar">
+          <button id="menu-btn" class="pill menu" aria-label="Menu" aria-expanded="false">
+            ☰
+          </button>
+          <form id="top-form" class="tsearch" role="search">
+            <input
+              id="tq"
+              type="search"
+              placeholder="Search a coin, e.g. Bitcoin"
+              aria-label="Search coins"
+            />
+          </form>
+          <button id="cur-btn" class="pill" title="Switch currency">USD</button
+          ><button id="theme-btn" class="pill" title="Switch theme">◐</button>
+        </header>
+        <p id="notice" class="notice" hidden role="status"></p>
+        <main>
+          <h1>Markets</h1>
+          <div class="row">
+            <input
+              id="q"
+              type="search"
+              placeholder="Search coins"
+              aria-label="Search coins"
+            /><button id="refresh">Refresh</button>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th data-k="rank">#</th>
+                  <th data-k="name">Coin</th>
+                  <th data-k="price">Price</th>
+                  <th data-k="c24">24h</th>
+                  <th data-k="c7">7d</th>
+                  <th data-k="cap">Market cap</th>
+                  <th>★</th>
+                </tr>
+              </thead>
+              <tbody id="rows">
+                <tr>
+                  <td colspan="7">Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </main>
+        <footer>
+          <p>
+            CryptoView is for education only. Data: Coinpaprika, Binance, fawazahmed0 exchange-api.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script>
+      let coins = [],
+        sort = { k: "rank", d: 1 };
+      $("#q").value = new URLSearchParams(location.search).get("q") || "";
+      function draw() {
+        const t = $("#q").value.toLowerCase();
+        const l = coins
+          .filter((c) => (c.name + c.symbol).toLowerCase().includes(t))
+          .sort((a, b) => (a[sort.k] > b[sort.k] ? 1 : -1) * sort.d);
+        $("#rows").innerHTML =
+          l.map(coinRow).join("") || '<tr><td colspan="7">No coins match your search.</td></tr>';
+      }
+      async function load(force) {
+        try {
+          const r = await getMarket(force);
+          coins = r.coins;
+          stale(r.stale);
+          window.cvRender = draw;
+          draw();
+        } catch (e) {
+          fail(e);
+        }
+      }
+      $("#q").oninput = draw;
+      $$("th[data-k]").forEach(
+        (th) =>
+          (th.onclick = () => {
+            const k = th.dataset.k;
+            sort = { k, d: sort.k === k ? -sort.d : k === "rank" || k === "name" ? 1 : -1 };
+            draw();
+          }),
+      );
+      $("#refresh").onclick = async (e) => {
+        e.target.disabled = true;
+        await load(true);
+        setTimeout(() => (e.target.disabled = false), 3000);
+      };
+      getRate().then(() => load());
+    </script>
+  </body>
+</html>
