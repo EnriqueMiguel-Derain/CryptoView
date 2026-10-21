@@ -50,7 +50,7 @@
               <section class="card">
                 <div class="row between">
                   <h2>Total holding</h2>
-                  <span class="pill sm">Practice</span>
+                  <a class="pill sm" href="wallet.html">Practice</a>
                 </div>
                 <p class="huge" id="total">…</p>
                 <p class="small" id="totsub"></p>
@@ -173,9 +173,9 @@
       $("#chart").onmousemove = (e) => {
         if (!pts.length) return;
         const i = chartIdx(e.target, pts, e);
-        $("#readout").textContent =
+        $("#tip").textContent =
           new Date(pts[i].t).toLocaleDateString() + ": " + money(pts[i].p);
-        chart(i);
+        drawChart($("#chart"), pts, i);
       };
       $$("#wf button").forEach(
         (b) =>
