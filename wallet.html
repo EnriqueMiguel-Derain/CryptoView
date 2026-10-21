@@ -74,7 +74,7 @@
               </form>
             </section>
             <section class="card">
-              <h2>Balance</h2>
+              <h2>Total holding</h2>
               <p class="big" id="cash"></p>
               <p class="small" id="tot"></p>
               <button id="reset" class="alt">Reset wallet</button>
@@ -146,10 +146,10 @@
         }
         $("#port").innerHTML =
           h || '<tr><td colspan="5">No holdings yet. Place a buy order to start.</td></tr>';
-        $("#cash").textContent = money(w.cash);
+        $("#cash").textContent = money(w.cash + val);
         fitText($("#cash"));
         $("#tot").textContent =
-          `Portfolio value ${money(val)} · Total ${money(w.cash + val)} (started with ${money(START)})`;
+          `Cash ${money(w.cash)} · Portfolio value ${money(val)} (started with ${money(START)})`;
         const f = $("#filt").value;
         $("#hist").innerHTML =
           w.tx
