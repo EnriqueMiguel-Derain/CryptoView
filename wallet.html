@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Practice Wallet – CryptoView</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside id="nav" class="side">
+        <a class="logo" href="index.html">Crypto<span>View</span></a
+        ><a href="index.html"><i>▦</i>Dashboard</a><a href="markets.html"><i>◔</i>Markets</a
+        ><a href="converter.html"><i>⇄</i>Converter</a><a href="watchlist.html"><i>☆</i>Watchlist</a
+        ><a href="wallet.html" class="on"><i>▣</i>Wallet</a
+        ><a href="learn.html"><i>?</i>Learn &amp; Help</a>
+        <div class="sp"></div>
+        <small>Education only. Not financial advice. The wallet uses virtual money.</small>
+      </aside>
+      <div id="scrim" class="scrim"></div>
+      <div class="content">
+        <header class="topbar">
+          <button id="menu-btn" class="pill menu" aria-label="Menu" aria-expanded="false">
+            ☰
+          </button>
+          <form id="top-form" class="tsearch" role="search">
+            <input
+              id="tq"
+              type="search"
+              placeholder="Search a coin, e.g. Bitcoin"
+              aria-label="Search coins"
+            />
+          </form>
+          <button id="cur-btn" class="pill" title="Switch currency">USD</button
+          ><button id="theme-btn" class="pill" title="Switch theme">◐</button>
+        </header>
+        <p id="notice" class="notice" hidden role="status"></p>
+        <main>
+          <h1>Practice wallet</h1>
+          <p class="card warn">
+            <strong>Practice only.</strong> This wallet uses virtual money at live prices. It is not
+            real and it is not financial advice.
+          </p>
+          <div class="cols">
+            <section class="card">
+              <h2>Trade</h2>
+              <form id="tf" class="stack">
+                <label
+                  >Action<select id="act">
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                  </select></label
+                >
+                <label>Coin<select id="coin"></select></label
+                ><label
+                  >Amount<span class="row"
+                    ><input
+                      id="usd"
+                      type="number"
+                      min="0"
+                      step="any"
+                      placeholder="e.g. 500"
+                      aria-label="Amount"
+                    /><select id="unit" aria-label="Currency">
+                      <option value="USD">USD</option>
+                      <option value="PHP">PHP</option>
+                    </select></span
+                  ></label
+                >
+                <p id="est" class="small"></p>
+                <p id="terr" class="dn small"></p>
+                <p id="tok" class="up small"></p>
+                <button>Place order</button>
+              </form>
+            </section>
+            <section class="card">
+              <h2>Balance</h2>
+              <p class="big" id="cash"></p>
+              <p class="small" id="tot"></p>
+              <button id="reset" class="alt">Reset wallet</button>
+            </section>
+          </div>
+          <h2>Portfolio</h2>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Coin</th>
+                  <th>Quantity</th>
+                  <th>Avg cost</th>
+                  <th>Value</th>
+                  <th>Profit / loss</th>
+                </tr>
+              </thead>
+              <tbody id="port"></tbody>
+            </table>
+          </div>
+          <div class="row between">
+            <h2>History</h2>
+            <select id="filt" aria-label="Filter history">
+              <option value="">All</option>
+              <option value="buy">Buys</option>
+              <option value="sell">Sells</option>
+            </select>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Coin</th>
+                  <th>Quantity</th>
+                  <th>Price (USD)</th>
+                </tr>
+              </thead>
+              <tbody id="hist"></tbody>
+            </table>
+          </div>
+        </main>
+        <footer>
+          <p>
+            CryptoView is for education only. Data: Coinpaprika, Binance, fawazahmed0 exchange-api.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script>
+      let coins = [];
+      const START = START_CASH,
+        P = new URLSearchParams(location.search);
+      const W = () => store.get("cv_wallet", { cash: START, hold: {}, tx: [] }),
+        by = (id) => coins.find((c) => c.id === id);
+      function draw() {
+        const w = W();
+        let val = 0,
+          h = "";
+        for (const [id, p] of Object.entries(w.hold)) {
+          const c = by(id);
+          if (!c) continue;
+          const v = p.q * c.price,
+            pl = v - p.cost;
+          val += v;
+          h += `<tr><td>${esc(c.name)}</td><td>${p.q.toPrecision(6)}</td><td>${money(p.cost / p.q)}</td><td>${money(v)}</td><td class="${pl >= 0 ? "up" : "dn"}">${money(pl)}</td></tr>`;
+        }
+        $("#port").innerHTML =
+          h || '<tr><td colspan="5">No holdings yet. Place a buy order to start.</td></tr>';
+        $("#cash").textContent = money(w.cash);
+        fitText($("#cash"));
+        $("#tot").textContent =
+          `Portfolio value ${money(val)} · Total ${money(w.cash + val)} (started with ${money(START)})`;
+        const f = $("#filt").value;
+        $("#hist").innerHTML =
+          w.tx
+            .filter((t) => !f || t.type === f)
+            .map(
+              (t) =>
+                `<tr><td>${new Date(t.d).toLocaleString()}</td><td>${t.type}</td><td>${esc(t.sym)}</td><td>${t.q.toPrecision(6)}</td><td>$${t.price.toLocaleString()}</td></tr>`,
+            )
+            .join("") || '<tr><td colspan="5">No transactions yet.</td></tr>';
+      }
+      $("#tf").onsubmit = (e) => {
+        e.preventDefault();
+        $("#terr").textContent = "";
+        $("#tok").textContent = "";
+        const w = W(),
+          c = by($("#coin").value),
+          raw = parseFloat($("#usd").value),
+          act = $("#act").value,
+          u = $("#unit").value;
+        if (!c) return ($("#terr").textContent = "Prices are not available right now.");
+        if (isNaN(raw) || raw <= 0)
+          return ($("#terr").textContent = "Enter an amount greater than 0.");
+        if (u === "PHP" && !rate)
+          return ($("#terr").textContent =
+            "The peso rate is not available right now. Please use USD.");
+        const a = u === "PHP" ? raw / rate : raw;
+        const q = a / c.price,
+          p = w.hold[c.id] || { q: 0, cost: 0 };
+        if (act === "buy") {
+          if (a > w.cash)
+            return ($("#terr").textContent = "Not enough virtual cash for this order.");
+          w.cash -= a;
+          p.q += q;
+          p.cost += a;
+        } else {
+          if (q > p.q + 1e-9)
+            return ($("#terr").textContent =
+              "You do not own enough of this coin to sell that much.");
+          const avg = p.cost / p.q;
+          w.cash += a;
+          p.cost -= avg * q;
+          p.q -= q;
+        }
+        if (p.q < 1e-9) delete w.hold[c.id];
+        else w.hold[c.id] = p;
+        w.tx.unshift({ d: Date.now(), type: act, sym: c.symbol, q, price: c.price });
+        store.set("cv_wallet", w);
+        $("#tok").textContent =
+          `Done: ${act === "buy" ? "bought" : "sold"} ${q.toPrecision(5)} ${c.symbol} for ${u === "PHP" ? "₱" : "$"}${raw.toLocaleString()}.`;
+        $("#usd").value = "";
+        $("#est").textContent = "";
+        draw();
+      };
+      function est() {
+        const c = by($("#coin").value),
+          raw = parseFloat($("#usd").value),
+          u = $("#unit").value;
+        $("#est").textContent = "";
+        if (!c || isNaN(raw) || raw <= 0 || (u === "PHP" && !rate)) return;
+        const a = u === "PHP" ? raw / rate : raw;
+        $("#est").textContent =
+          "≈ " +
+          (a / c.price).toPrecision(5) +
+          " " +
+          c.symbol +
+          (u === "PHP"
+            ? " (about $" + a.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ")"
+            : "");
+      }
+      ["usd", "unit", "coin", "act"].forEach((i) =>
+        ["input", "change"].forEach((v) => $("#" + i).addEventListener(v, est)),
+      );
+      $("#filt").onchange = draw;
+      $("#reset").onclick = () => {
+        if (confirm("Reset your practice wallet? This clears your holdings and history.")) {
+          store.set("cv_wallet", { cash: START, hold: {}, tx: [] });
+          draw();
+        }
+      };
+      (async () => {
+        await getRate();
+        try {
+          const r = await getMarket();
+          coins = r.coins;
+          stale(r.stale);
+          $("#coin").innerHTML = coins
+            .map((c) => `<option value="${esc(c.id)}">${esc(c.name)} (${esc(c.symbol)})</option>`)
+            .join("");
+          if (P.get("coin")) $("#coin").value = P.get("coin");
+          if (P.get("act")) $("#act").value = P.get("act");
+          if (cur === "PHP" && rate) $("#unit").value = "PHP";
+          window.cvRender = draw;
+          draw();
+        } catch (e) {
+          fail(e);
+          $("#tf button").disabled = true;
+          draw();
+        }
+      })();
+    </script>
+  </body>
+</html>
