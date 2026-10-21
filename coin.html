@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coin Detail – CryptoView</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside id="nav" class="side">
+        <a class="logo" href="index.html">Crypto<span>View</span></a
+        ><a href="index.html"><i>▦</i>Dashboard</a><a href="markets.html"><i>◔</i>Markets</a
+        ><a href="converter.html"><i>⇄</i>Converter</a><a href="watchlist.html"><i>☆</i>Watchlist</a
+        ><a href="wallet.html"><i>▣</i>Wallet</a><a href="learn.html"><i>?</i>Learn &amp; Help</a>
+        <div class="sp"></div>
+        <small>Education only. Not financial advice. The wallet uses virtual money.</small>
+      </aside>
+      <div id="scrim" class="scrim"></div>
+      <div class="content">
+        <header class="topbar">
+          <button id="menu-btn" class="pill menu" aria-label="Menu" aria-expanded="false">
+            ☰
+          </button>
+          <form id="top-form" class="tsearch" role="search">
+            <input
+              id="tq"
+              type="search"
+              placeholder="Search a coin, e.g. Bitcoin"
+              aria-label="Search coins"
+            />
+          </form>
+          <button id="cur-btn" class="pill" title="Switch currency">USD</button
+          ><button id="theme-btn" class="pill" title="Switch theme">◐</button>
+        </header>
+        <p id="notice" class="notice" hidden role="status"></p>
+        <main>
+          <p><a href="markets.html">← Back to markets</a></p>
+          <div id="head" class="card">Loading…</div>
+          <div class="card">
+            <div class="row between">
+              <h2>Price chart</h2>
+              <div id="ranges" class="row">
+                <button data-d="7" class="alt">7D</button
+                ><button data-d="30" class="alt on">30D</button
+                ><button data-d="90" class="alt">90D</button>
+              </div>
+            </div>
+            <p id="readout" class="small">Hover over the chart to see a price.</p>
+            <canvas id="chart" height="260" aria-label="Price chart"></canvas>
+            <p id="cmsg" class="small"></p>
+          </div>
+          <div class="card">
+            <h2>About</h2>
+            <div id="about">Loading…</div>
+          </div>
+        </main>
+        <footer>
+          <p>
+            CryptoView is for education only. Data: Coinpaprika, Binance, fawazahmed0 exchange-api.
+          </p>
+        </footer>
+      </div>
+    </div>
+    <script src="js/app.js"></script>
+    <script>
+      const id = new URLSearchParams(location.search).get("id") || "btc-bitcoin";
+      let coin = null,
+        pts = [];
+      function head() {
+        if (!coin) return;
+        $("#head").innerHTML =
+          `<h1>${esc(coin.name)} <small>${esc(coin.symbol)}</small></h1><p class="big">${money(coin.price)} ${pct(coin.c24)}</p>
+<p class="small">Rank #${coin.rank} · 7d ${pct(coin.c7)} · Market cap ${money(coin.cap, true)}</p>
+<div class="row">${star(coin.id)}<a class="btn alt" href="converter.html?from=${coin.id}">Convert</a><a class="btn" href="wallet.html?coin=${coin.id}&act=buy">Buy</a><a class="btn alt" href="wallet.html?coin=${coin.id}&act=sell">Sell</a></div>`;
+      }
+      const chart = (hi) => drawChart($("#chart"), pts, hi);
+      async function loadChart(d) {
+        $("#cmsg").textContent = "Loading chart…";
+        pts = [];
+        try {
+          const k = await getJSON(
+            `https://data-api.binance.vision/api/v3/klines?symbol=${coin.symbol}USDT&interval=1d&limit=${d}`,
+          );
+          pts = k.map((r) => ({ t: r[0], p: parseFloat(r[4]) }));
+          $("#cmsg").textContent = "";
+          chart();
+        } catch (e) {
+          $("#cmsg").textContent = "No chart data is available for this coin.";
+          chart();
+        }
+      }
+      $("#chart").onmousemove = (e) => {
+        if (!pts.length) return;
+        const i = chartIdx(e.target, pts, e);
+        $("#readout").textContent =
+          new Date(pts[i].t).toLocaleDateString() + ": " + money(pts[i].p);
+        chart(i);
+      };
+      $$("#ranges button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            $$("#ranges button").forEach((x) => x.classList.toggle("on", x === b));
+            loadChart(+b.dataset.d);
+          }),
+      );
+      addEventListener("resize", () => chart());
+      document.addEventListener("cv:watch", head);
+      (async () => {
+        await getRate();
+        try {
+          const r = await getMarket();
+          stale(r.stale);
+          coin = r.coins.find((c) => c.id === id);
+          if (!coin) {
+            $("#head").textContent = "Coin not found in the top 50.";
+            return;
+          }
+          window.cvRender = () => {
+            head();
+            chart();
+          };
+          head();
+          loadChart(30);
+          try {
+            const d = await getJSON(
+              "https://api.coinpaprika.com/v1/coins/" + encodeURIComponent(id),
+            );
+            $("#about").innerHTML =
+              `<p>${esc(d.description || "No description available.")}</p><div class="row">${(
+                d.tags || []
+              )
+                .slice(0, 6)
+                .map((t) => `<span class="chip">${esc(t.name)}</span>`)
+                .join("")}</div>
+<p>${d.links?.website ? `<a href="${esc(d.links.website[0])}" target="_blank" rel="noopener">Official website</a>` : ""}</p>`;
+          } catch (e) {
+            $("#about").textContent = "Could not load the description.";
+          }
+        } catch (e) {
+          fail(e);
+        }
+      })();
+    </script>
+  </body>
+</html>
